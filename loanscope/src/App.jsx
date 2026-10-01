@@ -1,6 +1,13 @@
+import {useState} from "react";
 import './App.css';
 
 function App() {
+
+  // Allows values to be changed
+  const [principal, setPrincipal] = useState(25000);
+  const [interestRate, setInterestRate] = useState(6.5);
+  const [monthlyPayment, setMonthlyPayment] = useState(500);
+
   // Will be displayed on webpage
   return (
     <div className="loan-container">
@@ -16,13 +23,16 @@ function App() {
           type="number"
           min="1"
           max="100000000"
-          placeholder="25000"
+          value={principal}
+          onChange={(e) => setPrincipal(e.target.value)}
         />
 
         <input
             type="range"
             min="1"
             max="100000000"
+            value={principal}
+            onChange={(e) => setPrincipal(e.target.value)}
         />
 
       </div>
@@ -36,8 +46,8 @@ function App() {
           type="number"
           min="0"
           max="40"
-          step="0.01"
-          placeholder="6.50"
+          value={interestRate}
+          onChange={(e) => setInterestRate(e.target.value)}
         />
         {/* Input type range to use a slider */}
         <input
@@ -45,6 +55,8 @@ function App() {
             min="0"
             max="40"
             step="0.01"
+            value={interestRate}
+            onChange={(e) => setInterestRate(e.target.value)}
         />
         
       </div>
@@ -57,13 +69,16 @@ function App() {
           <input
             type="number"
             min="1"
-            placeholder="500"
+            value={monthlyPayment}
+            onChange={(e) => setMonthlyPayment(e.target.value)}
           />
 
           <input
             type="range"
             min="1"
             max="1000000"
+            value={monthlyPayment}
+            onChange={(e) => setMonthlyPayment(e.target.value)}
           />
         
       </div>
