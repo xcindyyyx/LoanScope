@@ -1,4 +1,9 @@
-import {calc_loan} from "./loan_calculations"
+import {
+  calc_loan, 
+  calc_monthly_rate, 
+  calc_monthly_interest
+} from "./loan_calculations";
+
 import {useState} from "react";
 import './App.css';
 
@@ -8,6 +13,27 @@ function App() {
   const [principal, setPrincipal] = useState(25000);
   const [interestRate, setInterestRate] = useState(6.5);
   const [monthlyPayment, setMonthlyPayment] = useState(500);
+
+  // Calculate the monthly interest rate
+  const monthly_rate = calc_monthly_rate(
+    Number(interestRate)
+  );
+
+
+  // Calculate the minimum monthly payment
+  const minimum_payment = calc_monthly_interest(
+    Number(principal),
+    monthly_rate
+  );
+
+
+  // Monthly payment maximum is the greater of
+  // $1,000,000 or 3 times the minimum payment
+  const max_monthly_payment = Math.max(
+    1000000,
+    minimum_payment * 3
+  );
+
 
   // Calculate loan results
   const loan_results = calc_loan(
@@ -29,9 +55,9 @@ function App() {
   const payoff_date = new Date();
 
   if (!loan_results.error) {
-  payoff_date.setMonth(
-    payoff_date.getMonth() + loan_results.months
-  );
+    payoff_date.setMonth(
+      payoff_date.getMonth() + loan_results.months
+    );
   }
 
   // Will be displayed on webpage
@@ -72,6 +98,7 @@ function App() {
           type="number"
           min="0"
           max="40"
+          step="0.01"
           value={interestRate}
           onChange={(e) => setInterestRate(e.target.value)}
         />
@@ -95,6 +122,7 @@ function App() {
           <input
             type="number"
             min="1"
+            max={max_monthly_payment}
             value={monthlyPayment}
             onChange={(e) => setMonthlyPayment(e.target.value)}
           />
@@ -102,7 +130,7 @@ function App() {
           <input
             type="range"
             min="1"
-            max="1000000"
+            max={max_monthly_payment}
             value={monthlyPayment}
             onChange={(e) => setMonthlyPayment(e.target.value)}
           />
