@@ -9,12 +9,22 @@ function App() {
   const [interestRate, setInterestRate] = useState(6.5);
   const [monthlyPayment, setMonthlyPayment] = useState(500);
 
-   const loan_results = calc_loan(
-        Number(principal),
-        Number(interestRate),
-        Number(monthlyPayment)
-    ); 
-    
+  // Calculate loan results
+  const loan_results = calc_loan(
+      Number(principal),
+      Number(interestRate),
+      Number(monthlyPayment)
+  ); 
+
+  // Convert total months into years and remaining months
+  const years = Math.floor(loan_results.months / 12);
+  const remaining_months = loan_results.months % 12;
+
+
+  // Calculate estimated payoff date
+  const payoff_date = new Date();
+  payoff_date.setMonth(payoff_date.getMonth() + loan_results.months);
+
   // Will be displayed on webpage
   return (
     <div className="loan-container">
@@ -89,6 +99,30 @@ function App() {
           />
         
       </div>
+
+      {/* Display loan results */}
+      <div className="loan-results">
+
+        <h2>Loan Results</h2>
+
+        <p>
+          Months to Pay Off: {loan_results.months}
+        </p>
+
+        <p>
+          Loan Term: {years} years {remaining_months} months
+        </p>
+
+        <p>
+          Payoff Date: {payoff_date.toLocaleDateString()}
+        </p>
+
+        <p>
+          Total Interest: ${loan_results.total_interest.toFixed(2)}
+        </p>
+
+      </div>
+
 
     </div>
   )
