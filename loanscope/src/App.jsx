@@ -52,6 +52,18 @@ function App() {
   // Controls whether cumulative interest is shown on the chart
   const [showInterest, setShowInterest] = useState(false);
 
+  // Controls whether the amortization schedule is visible
+  const [showSchedule, setShowSchedule] = useState(false);
+
+  // Controls the current page of the amortization schedule
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Controls which year of the schedule is displayed
+  const [selectedYear, setSelectedYear] = useState("all");
+
+  // Number of payments shown on each page
+  const paymentsPerPage = 12;
+
   useEffect(() => {
 
     const timer = setTimeout(() => {
@@ -92,11 +104,47 @@ function App() {
       Number(calcMonthlyPayment)
   ); 
 
+  // Filter the schedule by the selected year
+  const filteredSchedule = loan_results.error
+    ? []
+    : selectedYear === "all"
+      ? loan_results.schedule
+      : loan_results.schedule.filter((payment) => {
+          const year = Number(selectedYear);
+
+          const startMonth = (year - 1) * 12 + 1;
+          const endMonth = year * 12;
+
+          return (
+            payment.month >= startMonth &&
+            payment.month <= endMonth
+          );
+        });
+
+  // Calculate which payments should appear on the current page
+  const startIndex = (currentPage - 1) * paymentsPerPage;
+  const endIndex = startIndex + paymentsPerPage;
+
+  const currentPayments = filteredSchedule.slice(
+    startIndex,
+    endIndex
+  );
+
+  const totalPages = loan_results.error
+    ? 0
+    : Math.ceil(filteredSchedule.length / paymentsPerPage);
+
+  // Calculate how many years are in the loan schedule
+  const totalYears = loan_results.error
+    ? 0
+    : Math.ceil(loan_results.months / 12);
+
   // Only calculate the loan term if there is no error
   const years = loan_results.error
     ? 0
     : Math.floor(loan_results.months / 12);
 
+  // Calculate the total number of pages
   const remaining_months = loan_results.error
     ? 0
     : loan_results.months % 12;
@@ -108,6 +156,54 @@ function App() {
     payoff_date.setMonth(
       payoff_date.getMonth() + loan_results.months
     );
+  }
+
+  // Export the full amortization schedule as a CSV file
+  function exportCSV() {
+
+    if (loan_results.error) {
+      return;
+    }
+
+    const headers = [
+      "Payment Number",
+      "Payment Amount",
+      "Principal",
+      "Interest",
+      "Remaining Balance"
+    ];
+
+    const rows = loan_results.schedule.map((payment) => [
+      payment.month,
+      payment.payment.toFixed(2),
+      payment.principal.toFixed(2),
+      payment.interest.toFixed(2),
+      payment.balance.toFixed(2)
+    ]);
+
+    const csvContent = [
+      headers,
+      ...rows
+    ]
+      .map((row) => row.join(","))
+      .join("\n");
+
+    const blob = new Blob(
+      [csvContent],
+      { type: "text/csv" }
+    );
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "loan_schedule.csv";
+
+    link.click();
+
+    URL.revokeObjectURL(url);
+
   }
 
   // Will be displayed on webpage
@@ -221,9 +317,9 @@ function App() {
           </p>
         </>
        )}
-     </div>
+    </div>
 
-     <div className="loan-chart">
+    <div className="loan-chart">
       <h2>Remaining Loan Balance</h2>
 
        <label>
@@ -270,10 +366,89 @@ function App() {
         </>
       )}
 
-     </div>
-
     </div>
-  );
+     
+    <div className="loan-schedule">
+      <h2>Amortization Schedule</h2>
+
+      {!loan_results.error && (
+        <button onClick={() => setShowSchedule(!showSchedule)}>
+          {showSchedule ? "Hide Schedule" : "Show Schedule"}
+        </button>
+      )}
+      
+      {!loan_results.error && showSchedule && (
+        <>
+          <button onClick={exportCSV}>
+            Export CSV
+          </button>
+
+          <select
+            value={selectedYear}
+            onChange={(e) => {
+              setSelectedYear(e.target.value);
+              setCurrentPage(1);
+            }}
+          >
+            <option value="all">All Years</option>
+
+            {Array.from({ length: totalYears }, (_, index) => (
+              <option key={index + 1} value={index + 1}>
+                Year {index + 1}
+              </option>
+            ))}
+          </select>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Payment #</th>
+                <th>Payment Amount</th>
+                <th>Principal</th>
+                <th>Interest</th>
+                <th>Remaining Balance</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {currentPayments.map((payment) => (
+                <tr key={payment.month}>
+                  <td>{payment.month}</td>
+                  <td>${payment.payment.toFixed(2)}</td>
+                  <td>${payment.principal.toFixed(2)}</td>
+                  <td>${payment.interest.toFixed(2)}</td>
+                  <td>${payment.balance.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+        <div className="pagination">
+          <button
+            onClick={() => setCurrentPage(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </button>
+
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+
+          <button
+            onClick={() => setCurrentPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </button>
+        </div>
+
+        </>
+    )}
+  </div>
+
+</div>
+);
 }
 
 export default App;
