@@ -1,5 +1,4 @@
 import {
-  calc_loan, 
   calc_monthly_rate, 
   calc_monthly_interest
 } from "./loan_calculations";
@@ -16,6 +15,14 @@ import {
 import {useState, useEffect} from "react";
 import './App.css';
 
+// Format money using the user's browser locale
+function formatCurrency(value) {
+  return new Intl.NumberFormat(navigator.language || "en-US", {
+    style: "currency",
+    currency: "USD"
+  }).format(value);
+}
+
 // Displays the month, remaining balance, and cumulative interest on hover
 function CustomTooltip({ active, payload, label }) {
 
@@ -26,10 +33,8 @@ function CustomTooltip({ active, payload, label }) {
     return (
       <div className="custom-tooltip">
         <p>Month: {label}</p>
-        <p>Remaining Balance: ${data.balance.toFixed(2)}</p>
-        <p>
-          Cumulative Interest: ${data.cumulative_interest.toFixed(2)}
-        </p>
+        <p>Remaining Balance: {formatCurrency(data.balance)}</p>
+        <p>Cumulative Interest: {formatCurrency(data.cumulative_interest)}</p>
       </div>
     );
   }
@@ -96,6 +101,9 @@ function App() {
   const [interestRate, setInterestRate] = useState(urlValues.interestRate);
   const [monthlyPayment, setMonthlyPayment] = useState(urlValues.monthlyPayment);
 
+  // Store loan results received from the backend
+  const [backendResults, setBackendResults] = useState(null);
+
   // Values actually used for loan calculations
   const [calcPrincipal, setCalcPrincipal] = useState(urlValues.principal);
   const [calcInterestRate, setCalcInterestRate] = useState(urlValues.interestRate);
@@ -142,6 +150,28 @@ function App() {
 
   }, [principal, interestRate, monthlyPayment]);
 
+  // Send the loan values to the backend
+  useEffect(() => {
+
+    fetch("http://localhost:3000/api/calculate", {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify({
+        principal: Number(calcPrincipal),
+        annual_rate: Number(calcInterestRate),
+        monthly_payment: Number(calcMonthlyPayment)
+      })
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        setBackendResults(data);
+      });
+  }, [calcPrincipal, calcInterestRate, calcMonthlyPayment]);
+
   // Calculate the monthly interest rate
   const monthly_rate = calc_monthly_rate(
     Number(calcInterestRate)
@@ -172,14 +202,10 @@ function App() {
     interestRateError ||
     monthlyPaymentError;
 
-  // Calculate loan results only if all inputs are valid
+  // Calculate loan results received from the backend
   const loan_results = hasInputError
     ? { error: "Please correct the invalid input values." }
-    : calc_loan(
-        Number(calcPrincipal),
-        Number(calcInterestRate),
-        Number(calcMonthlyPayment)
-      );
+    : backendResults || { error: "Calculating..." };
 
   // Filter the schedule by the selected year
   const filteredSchedule = loan_results.error
@@ -307,7 +333,7 @@ function App() {
 
   // Will be displayed on webpage
   return (
-    <div className="loan-container">
+    <main className="loan-container">
       <h1> LoanScope </h1>
       <p>Explore how your payment affects the life of your loan.</p>
 
@@ -319,9 +345,10 @@ function App() {
       {/* Container for starting principal */}
       <div className="loan-input">
 
-        <label>Starting principal</label>
+        <label htmlFor="principal-input">Starting principal</label>
 
         <input
+          id="principal-input"
           type="number"
           min="1"
           max="100000000"
@@ -334,6 +361,7 @@ function App() {
             min="1"
             max="100000000"
             value={principal}
+            aria-label="Starting principal slider"
             onChange={(e) => {
               setPrincipal(e.target.value);
               setCalcPrincipal(e.target.value);
@@ -351,9 +379,10 @@ function App() {
       {/* Container for annual interest rate */}
       <div className="loan-input">
 
-        <label>Annual Interest Rate</label>
+        <label htmlFor="interest-rate-input">Annual Interest Rate</label>
 
         <input
+          id="interest-rate-input"
           type="number"
           min="0"
           max="40"
@@ -365,6 +394,7 @@ function App() {
         {/* Input type range to use a slider */}
         <input
             type="range" 
+            aria-label="Annual interest rate slider"
             min="0"
             max="40"
             step="0.01"
@@ -386,9 +416,10 @@ function App() {
       {/* Container for monthly payment */}
       <div className="loan-input">
 
-         <label>Monthly Payment</label>
+         <label htmlFor="monthly-payment-input">Monthly Payment</label>
 
           <input
+            id="monthly-payment-input"
             type="number"
             min="1"
             max={max_monthly_payment}
@@ -398,6 +429,7 @@ function App() {
 
           <input
             type="range"
+            aria-label="Monthly payment slider"
             min="1"
             max={max_monthly_payment}
             value={monthlyPayment}
@@ -439,12 +471,12 @@ function App() {
           </p>
 
           <p>
-            Total Interest: ${loan_results.total_interest.toFixed(2)}
+            Total Interest: {formatCurrency(loan_results.total_interest)}
           </p>
         </>
        )}
     </div>
-
+ 
     <div className="loan-chart">
       <h2>Remaining Loan Balance</h2>
 
@@ -463,7 +495,7 @@ function App() {
           <div className="chart-summary">
             <p>Payoff Date: {payoff_date.toLocaleDateString()}</p>
             <p>Loan Term: {years} years {remaining_months} months</p>
-            <p>Total Interest: ${loan_results.total_interest.toFixed(2)}</p>
+            <p>Total Interest: {formatCurrency(loan_results.total_interest)}</p>
           </div>
 
           <ResponsiveContainer width="100%" height={300}>
@@ -540,10 +572,10 @@ function App() {
               {currentPayments.map((payment) => (
                 <tr key={payment.month}>
                   <td>{payment.month}</td>
-                  <td>${payment.payment.toFixed(2)}</td>
-                  <td>${payment.principal.toFixed(2)}</td>
-                  <td>${payment.interest.toFixed(2)}</td>
-                  <td>${payment.balance.toFixed(2)}</td>
+                  <td>{formatCurrency(payment.payment)}</td>
+                  <td>{formatCurrency(payment.principal)}</td>
+                  <td>{formatCurrency(payment.interest)}</td>
+                  <td>{formatCurrency(payment.balance)}</td>
                 </tr>
               ))}
             </tbody>
@@ -580,7 +612,7 @@ function App() {
         compounding methods.
       </p> 
       
-</div>
+</main>
 );
 }
 
