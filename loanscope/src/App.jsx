@@ -64,6 +64,8 @@ function App() {
   // Number of payments shown on each page
   const paymentsPerPage = 12;
 
+  // Wait 300ms after a numeric input changes before recalculating the loan
+  // Slider inputs update the calculation immediately
   useEffect(() => {
 
     const timer = setTimeout(() => {
@@ -88,7 +90,6 @@ function App() {
     monthly_rate
   );
 
-
   // Monthly payment maximum is the greater of
   // $1,000,000 or 3 times the minimum payment
   const max_monthly_payment = Math.max(
@@ -112,6 +113,7 @@ function App() {
       : loan_results.schedule.filter((payment) => {
           const year = Number(selectedYear);
 
+          // Find the first and last payment month for the selected year
           const startMonth = (year - 1) * 12 + 1;
           const endMonth = year * 12;
 
@@ -125,11 +127,13 @@ function App() {
   const startIndex = (currentPage - 1) * paymentsPerPage;
   const endIndex = startIndex + paymentsPerPage;
 
+  // Only keep the payments for the current page
   const currentPayments = filteredSchedule.slice(
     startIndex,
     endIndex
   );
 
+  // Calculate total number of pages
   const totalPages = loan_results.error
     ? 0
     : Math.ceil(filteredSchedule.length / paymentsPerPage);
@@ -144,7 +148,7 @@ function App() {
     ? 0
     : Math.floor(loan_results.months / 12);
 
-  // Calculate the total number of pages
+  // Calculate the remaining months after full years
   const remaining_months = loan_results.error
     ? 0
     : loan_results.months % 12;
@@ -161,10 +165,12 @@ function App() {
   // Export the full amortization schedule as a CSV file
   function exportCSV() {
 
+    // Do not export if the loan calc has an error
     if (loan_results.error) {
       return;
     }
 
+    // Column names for the CSV file
     const headers = [
       "Payment Number",
       "Payment Amount",
@@ -173,6 +179,7 @@ function App() {
       "Remaining Balance"
     ];
 
+    // Convert each payment into a row for the CSV
     const rows = loan_results.schedule.map((payment) => [
       payment.month,
       payment.payment.toFixed(2),
@@ -181,6 +188,7 @@ function App() {
       payment.balance.toFixed(2)
     ]);
 
+    // Combine the headings and payment rows into CSV text
     const csvContent = [
       headers,
       ...rows
@@ -188,6 +196,7 @@ function App() {
       .map((row) => row.join(","))
       .join("\n");
 
+    // Create a temporary CSV file in the browser 
     const blob = new Blob(
       [csvContent],
       { type: "text/csv" }
@@ -195,6 +204,7 @@ function App() {
 
     const url = URL.createObjectURL(blob);
 
+    // Create a temp link that downloads the CSV file
     const link = document.createElement("a");
 
     link.href = url;
@@ -202,6 +212,7 @@ function App() {
 
     link.click();
 
+    // Remove the temp browser URL after the download starts 
     URL.revokeObjectURL(url);
 
   }
@@ -376,7 +387,7 @@ function App() {
           {showSchedule ? "Hide Schedule" : "Show Schedule"}
         </button>
       )}
-      
+
       {!loan_results.error && showSchedule && (
         <>
           <button onClick={exportCSV}>
