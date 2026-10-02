@@ -3,12 +3,10 @@ export function calc_monthly_rate(annual_rate) {
     return (annual_rate / 100) / 12;
 }
 
-
 // Calculate the interest for one month
 export function calc_monthly_interest(balance, monthly_rate) {
     return balance * monthly_rate;
 }
-
 
 // Calculate the full loan
 export function calc_loan(principal, annual_rate, monthly_payment) {
