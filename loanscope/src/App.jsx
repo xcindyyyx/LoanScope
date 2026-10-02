@@ -149,7 +149,6 @@ function App() {
     minimum_payment * 3
   );
 
-
   // Calculate loan results
   const loan_results = calc_loan(
       Number(calcPrincipal),
@@ -527,6 +526,13 @@ function App() {
     )}
   </div>
 
+   {/* Loan estimate disclaimer */}
+      <p className="disclaimer">
+        LoanScope provides illustrative loan estimates only and is not financial
+        advice. Actual lender terms may differ due to fees, escrow, or different
+        compounding methods.
+      </p> 
+      
 </div>
 );
 }
