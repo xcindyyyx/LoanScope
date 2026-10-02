@@ -1,3 +1,4 @@
+import {calc_loan} from "./loan_calculations"
 import {useState} from "react";
 import './App.css';
 
@@ -8,6 +9,12 @@ function App() {
   const [interestRate, setInterestRate] = useState(6.5);
   const [monthlyPayment, setMonthlyPayment] = useState(500);
 
+   const loan_results = calc_loan(
+        Number(principal),
+        Number(interestRate),
+        Number(monthlyPayment)
+    ); 
+    
   // Will be displayed on webpage
   return (
     <div className="loan-container">
