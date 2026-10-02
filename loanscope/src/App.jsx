@@ -37,17 +37,69 @@ function CustomTooltip({ active, payload, label }) {
   return null;
 }
 
+// Default loan values used when URL parameters are missing or invalid
+const DEFAULT_PRINCIPAL = 25000;
+const DEFAULT_INTEREST_RATE = 6.5;
+const DEFAULT_MONTHLY_PAYMENT = 500;
+
+// Read loan values from the URL
+function getURLParameters() {
+
+  const params = new URLSearchParams(window.location.search);
+
+  const principalParam = params.get("principal");
+  const rateParam = params.get("rate");
+  const paymentParam = params.get("payment");
+
+  const principal = principalParam === null
+    ? NaN
+    : Number(principalParam);
+
+  const interestRate = rateParam === null
+    ? NaN
+    : Number(rateParam);
+
+  const monthlyPayment = paymentParam === null
+    ? NaN
+    : Number(paymentParam);
+
+  // Validate URL values and use safe defaults if they are invalid
+  const validPrincipal =
+    principal >= 1 && principal <= 100000000
+      ? principal
+      : DEFAULT_PRINCIPAL;
+
+  const validInterestRate =
+    interestRate >= 0 && interestRate <= 40
+      ? interestRate
+      : DEFAULT_INTEREST_RATE;
+
+  const validMonthlyPayment =
+    monthlyPayment >= 1
+      ? monthlyPayment
+      : DEFAULT_MONTHLY_PAYMENT;
+
+  return {
+    principal: validPrincipal,
+    interestRate: validInterestRate,
+    monthlyPayment: validMonthlyPayment
+  };
+}
+
 function App() {
 
+  // Get validated loan values from the URL
+  const urlValues = getURLParameters();
+
   // Values shown in the input boxes and sliders
-  const [principal, setPrincipal] = useState(25000);
-  const [interestRate, setInterestRate] = useState(6.5);
-  const [monthlyPayment, setMonthlyPayment] = useState(500);
+  const [principal, setPrincipal] = useState(urlValues.principal);
+  const [interestRate, setInterestRate] = useState(urlValues.interestRate);
+  const [monthlyPayment, setMonthlyPayment] = useState(urlValues.monthlyPayment);
 
   // Values actually used for loan calculations
-  const [calcPrincipal, setCalcPrincipal] = useState(25000);
-  const [calcInterestRate, setCalcInterestRate] = useState(6.5);
-  const [calcMonthlyPayment, setCalcMonthlyPayment] = useState(500);
+  const [calcPrincipal, setCalcPrincipal] = useState(urlValues.principal);
+  const [calcInterestRate, setCalcInterestRate] = useState(urlValues.interestRate);
+  const [calcMonthlyPayment, setCalcMonthlyPayment] = useState(urlValues.monthlyPayment);
 
   // Controls whether cumulative interest is shown on the chart
   const [showInterest, setShowInterest] = useState(false);
@@ -217,11 +269,28 @@ function App() {
 
   }
 
+  // Create a shareable link using the current loan values
+  function shareScenario() {
+
+    const url = new URL(window.location.href);
+
+    url.searchParams.set("principal", principal);
+    url.searchParams.set("rate", interestRate);
+    url.searchParams.set("payment", monthlyPayment);
+
+    navigator.clipboard.writeText(url.toString());
+  }
+
   // Will be displayed on webpage
   return (
     <div className="loan-container">
       <h1> LoanScope </h1>
       <p>Explore how your payment affects the life of your loan.</p>
+
+      {/* Copy the current loan scenario as a shareable link */}
+      <button onClick={shareScenario}>
+        Share
+      </button>
 
       {/* Container for starting principal */}
       <div className="loan-input">
@@ -433,7 +502,7 @@ function App() {
               ))}
             </tbody>
           </table>
-
+         
         <div className="pagination">
           <button
             onClick={() => setCurrentPage(currentPage - 1)}
