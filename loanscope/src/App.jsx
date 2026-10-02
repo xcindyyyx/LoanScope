@@ -16,14 +16,23 @@ function App() {
       Number(monthlyPayment)
   ); 
 
-  // Convert total months into years and remaining months
-  const years = Math.floor(loan_results.months / 12);
-  const remaining_months = loan_results.months % 12;
+  // Only calculate the loan term if there is no error
+  const years = loan_results.error
+    ? 0
+    : Math.floor(loan_results.months / 12);
 
+  const remaining_months = loan_results.error
+    ? 0
+    : loan_results.months % 12;
 
   // Calculate estimated payoff date
   const payoff_date = new Date();
-  payoff_date.setMonth(payoff_date.getMonth() + loan_results.months);
+
+  if (!loan_results.error) {
+  payoff_date.setMonth(
+    payoff_date.getMonth() + loan_results.months
+  );
+  }
 
   // Will be displayed on webpage
   return (
@@ -100,32 +109,36 @@ function App() {
         
       </div>
 
-      {/* Display loan results */}
-      <div className="loan-results">
+    <div className="loan-results">
 
-        <h2>Loan Results</h2>
+      <h2>Loan Results</h2>
 
-        <p>
-          Months to Pay Off: {loan_results.months}
-        </p>
+      {loan_results.error ? (
+        <p>{loan_results.error}</p>
+      ) : (
+        <>
+          <p>
+            Months to Pay Off: {loan_results.months}
+          </p>
 
-        <p>
-          Loan Term: {years} years {remaining_months} months
-        </p>
+          <p>
+            Loan Term: {years} years {remaining_months} months
+          </p>
 
-        <p>
-          Payoff Date: {payoff_date.toLocaleDateString()}
-        </p>
+          <p>
+            Payoff Date: {payoff_date.toLocaleDateString()}
+          </p>
 
-        <p>
-          Total Interest: ${loan_results.total_interest.toFixed(2)}
-        </p>
+          <p>
+            Total Interest: ${loan_results.total_interest.toFixed(2)}
+          </p>
+        </>
+       )}
 
-      </div>
-
-
+     </div>
     </div>
-  )
+  );
 }
+
 
 export default App;
