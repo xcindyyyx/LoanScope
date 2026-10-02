@@ -4,8 +4,38 @@ import {
   calc_monthly_interest
 } from "./loan_calculations";
 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer
+} from "recharts";
+
 import {useState, useEffect} from "react";
 import './App.css';
+
+// Displays the month, remaining balance, and cumulative interest on hover
+function CustomTooltip({ active, payload, label }) {
+
+  if (active && payload && payload.length) {
+
+    const data = payload[0].payload;
+
+    return (
+      <div className="custom-tooltip">
+        <p>Month: {label}</p>
+        <p>Remaining Balance: ${data.balance.toFixed(2)}</p>
+        <p>
+          Cumulative Interest: ${data.cumulative_interest.toFixed(2)}
+        </p>
+      </div>
+    );
+  }
+
+  return null;
+}
 
 function App() {
 
@@ -18,6 +48,9 @@ function App() {
   const [calcPrincipal, setCalcPrincipal] = useState(25000);
   const [calcInterestRate, setCalcInterestRate] = useState(6.5);
   const [calcMonthlyPayment, setCalcMonthlyPayment] = useState(500);
+
+  // Controls whether cumulative interest is shown on the chart
+  const [showInterest, setShowInterest] = useState(false);
 
   useEffect(() => {
 
@@ -188,11 +221,59 @@ function App() {
           </p>
         </>
        )}
+     </div>
+
+     <div className="loan-chart">
+      <h2>Remaining Loan Balance</h2>
+
+       <label>
+        <input
+          type="checkbox"
+          checked={showInterest}
+          onChange={(e) => setShowInterest(e.target.checked)}
+        />
+        Show Cumulative Interest
+       </label>
+
+      {/* Only show the chart if there is NOT an error */}
+      {!loan_results.error && (
+        <>
+          <div className="chart-summary">
+            <p>Payoff Date: {payoff_date.toLocaleDateString()}</p>
+            <p>Loan Term: {years} years {remaining_months} months</p>
+            <p>Total Interest: ${loan_results.total_interest.toFixed(2)}</p>
+          </div>
+
+          <ResponsiveContainer width="100%" height={300}>
+
+            <LineChart data={loan_results.schedule}>
+              <XAxis dataKey="month" />
+
+              <YAxis />
+
+              <Tooltip content={<CustomTooltip />} />
+
+              <Line
+                type="monotone"
+                dataKey="balance"
+              />
+              
+              {showInterest && (
+                <Line
+                  type="monotone"
+                  dataKey="cumulative_interest"
+                />
+              )}
+            </LineChart>
+
+          </ResponsiveContainer>
+        </>
+      )}
 
      </div>
+
     </div>
   );
 }
-
 
 export default App;
