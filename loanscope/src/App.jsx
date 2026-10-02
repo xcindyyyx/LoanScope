@@ -113,6 +113,14 @@ function App() {
   // Controls which year of the schedule is displayed
   const [selectedYear, setSelectedYear] = useState("all");
 
+  // Check if the principal is outside the allowed range
+  const principalError =
+    Number(principal) < 1 || Number(principal) > 100000000;
+
+  // Check if the interest rate is outside the allowed range
+  const interestRateError =
+    Number(interestRate) < 0 || Number(interestRate) > 40;
+
   // Number of payments shown on each page
   const paymentsPerPage = 12;
 
@@ -121,7 +129,11 @@ function App() {
   useEffect(() => {
 
     const timer = setTimeout(() => {
-      setCalcPrincipal(principal);
+
+      if (!principalError) {
+        setCalcPrincipal(principal);
+      }
+
       setCalcInterestRate(interestRate);
       setCalcMonthlyPayment(monthlyPayment);
     }, 300);
@@ -149,12 +161,25 @@ function App() {
     minimum_payment * 3
   );
 
-  // Calculate loan results
-  const loan_results = calc_loan(
-      Number(calcPrincipal),
-      Number(calcInterestRate),
-      Number(calcMonthlyPayment)
-  ); 
+  // Check if the monthly payment is outside the allowed range
+  const monthlyPaymentError =
+    Number(monthlyPayment) < 1 ||
+    Number(monthlyPayment) > max_monthly_payment;
+
+  // Check if any loan input is invalid
+  const hasInputError =
+    principalError ||
+    interestRateError ||
+    monthlyPaymentError;
+
+  // Calculate loan results only if all inputs are valid
+  const loan_results = hasInputError
+    ? { error: "Please correct the invalid input values." }
+    : calc_loan(
+        Number(calcPrincipal),
+        Number(calcInterestRate),
+        Number(calcMonthlyPayment)
+      );
 
   // Filter the schedule by the selected year
   const filteredSchedule = loan_results.error
@@ -315,6 +340,12 @@ function App() {
             }}
         />
 
+        {principalError && (
+          <p className="error-message">
+            Starting principal must be between $1 and $100,000,000.
+          </p>
+        )}
+
       </div>
 
       {/* Container for annual interest rate */}
@@ -330,6 +361,7 @@ function App() {
           value={interestRate}
           onChange={(e) => setInterestRate(e.target.value)}
         />
+
         {/* Input type range to use a slider */}
         <input
             type="range" 
@@ -342,6 +374,12 @@ function App() {
               setCalcInterestRate(e.target.value);
             }}
         />
+
+        {interestRateError && (
+          <p className="error-message">
+            Annual interest rate must be between 0% and 40%.
+          </p>
+        )}
         
       </div>
 
@@ -368,6 +406,15 @@ function App() {
               setCalcMonthlyPayment(e.target.value);
             }}
           />
+
+          {monthlyPaymentError && (
+            <p className="error-message">
+              Monthly payment must be between $1 and ${max_monthly_payment.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}.
+            </p>
+          )}
         
       </div>
 
