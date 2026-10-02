@@ -4,25 +4,42 @@ import {
   calc_monthly_interest
 } from "./loan_calculations";
 
-import {useState} from "react";
+import {useState, useEffect} from "react";
 import './App.css';
 
 function App() {
 
-  // Allows values to be changed
+  // Values shown in the input boxes and sliders
   const [principal, setPrincipal] = useState(25000);
   const [interestRate, setInterestRate] = useState(6.5);
   const [monthlyPayment, setMonthlyPayment] = useState(500);
 
+  // Values actually used for loan calculations
+  const [calcPrincipal, setCalcPrincipal] = useState(25000);
+  const [calcInterestRate, setCalcInterestRate] = useState(6.5);
+  const [calcMonthlyPayment, setCalcMonthlyPayment] = useState(500);
+
+  useEffect(() => {
+
+    const timer = setTimeout(() => {
+      setCalcPrincipal(principal);
+      setCalcInterestRate(interestRate);
+      setCalcMonthlyPayment(monthlyPayment);
+    }, 300);
+
+    return () => clearTimeout(timer);
+
+  }, [principal, interestRate, monthlyPayment]);
+
   // Calculate the monthly interest rate
   const monthly_rate = calc_monthly_rate(
-    Number(interestRate)
+    Number(calcInterestRate)
   );
 
 
   // Calculate the minimum monthly payment
   const minimum_payment = calc_monthly_interest(
-    Number(principal),
+    Number(calcPrincipal),
     monthly_rate
   );
 
@@ -37,9 +54,9 @@ function App() {
 
   // Calculate loan results
   const loan_results = calc_loan(
-      Number(principal),
-      Number(interestRate),
-      Number(monthlyPayment)
+      Number(calcPrincipal),
+      Number(calcInterestRate),
+      Number(calcMonthlyPayment)
   ); 
 
   // Only calculate the loan term if there is no error
@@ -84,7 +101,10 @@ function App() {
             min="1"
             max="100000000"
             value={principal}
-            onChange={(e) => setPrincipal(e.target.value)}
+            onChange={(e) => {
+              setPrincipal(e.target.value);
+              setCalcPrincipal(e.target.value);
+            }}
         />
 
       </div>
@@ -109,7 +129,10 @@ function App() {
             max="40"
             step="0.01"
             value={interestRate}
-            onChange={(e) => setInterestRate(e.target.value)}
+            onChange={(e) => {
+              setInterestRate(e.target.value);
+              setCalcInterestRate(e.target.value);
+            }}
         />
         
       </div>
@@ -132,7 +155,10 @@ function App() {
             min="1"
             max={max_monthly_payment}
             value={monthlyPayment}
-            onChange={(e) => setMonthlyPayment(e.target.value)}
+            onChange={(e) => {
+              setMonthlyPayment(e.target.value);
+              setCalcMonthlyPayment(e.target.value);
+            }}
           />
         
       </div>
